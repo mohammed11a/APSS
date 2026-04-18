@@ -89,7 +89,7 @@ class OverlayService : Service() {
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(R.string.dimmer_active))
-            .setSmallIcon(R.mipmap.ic_launcher) // In a real app use a proper notification icon
+            .setSmallIcon(R.drawable.ic_launcher) // In a real app use a proper notification icon
             .setContentIntent(mainPendingIntent)
             .addAction(0, getString(R.string.stop_dimming), stopPendingIntent)
             .setOngoing(true)
