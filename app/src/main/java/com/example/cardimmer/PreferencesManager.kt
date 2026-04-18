@@ -17,6 +17,9 @@ class PreferencesManager(context: Context) {
         private const val KEY_AUTO_START = "auto_start"
         private const val KEY_BUTTON_X = "button_x"
         private const val KEY_BUTTON_Y = "button_y"
+        private const val KEY_MUTE_ENABLED = "mute_enabled"
+        private const val KEY_MUTE_BUTTON_X = "mute_button_x"
+        private const val KEY_MUTE_BUTTON_Y = "mute_button_y"
     }
 
     var isEnabled: Boolean
@@ -53,6 +56,18 @@ class PreferencesManager(context: Context) {
     var buttonY: Int
         get() = prefs.getInt(KEY_BUTTON_Y, 100)
         set(value) = prefs.edit().putInt(KEY_BUTTON_Y, value).apply()
+
+    var isMuteEnabled: Boolean
+        get() = prefs.getBoolean(KEY_MUTE_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_MUTE_ENABLED, value).apply()
+
+    var muteButtonX: Int
+        get() = prefs.getInt(KEY_MUTE_BUTTON_X, 100)
+        set(value) = prefs.edit().putInt(KEY_MUTE_BUTTON_X, value).apply()
+
+    var muteButtonY: Int
+        get() = prefs.getInt(KEY_MUTE_BUTTON_Y, 300)
+        set(value) = prefs.edit().putInt(KEY_MUTE_BUTTON_Y, value).apply()
 
     fun resetToDefaults() {
         prefs.edit().clear().apply()

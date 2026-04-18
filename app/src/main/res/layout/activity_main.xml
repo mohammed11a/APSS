@@ -24,6 +24,14 @@
             android:layout_height="wrap_content"
             android:text="تفعيل التعتيم والزر العائم"
             android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchMute"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="تفعيل زر كتم الصوت العائم"
+            android:textSize="18sp"
             android:layout_marginBottom="16dp"/>
 
         <TextView

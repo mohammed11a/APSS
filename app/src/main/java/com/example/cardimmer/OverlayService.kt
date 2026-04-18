@@ -16,6 +16,7 @@ class OverlayService : Service() {
     private lateinit var prefs: PreferencesManager
     private var dimOverlayManager: DimOverlayManager? = null
     private var floatingButtonManager: FloatingButtonManager? = null
+    private var muteButtonManager: MuteButtonManager? = null
 
     companion object {
         const val ACTION_STOP = "com.example.cardimmer.ACTION_STOP"
@@ -33,9 +34,13 @@ class OverlayService : Service() {
 
         dimOverlayManager = DimOverlayManager(this, prefs)
         floatingButtonManager = FloatingButtonManager(this, prefs, dimOverlayManager!!)
+        muteButtonManager = MuteButtonManager(this, prefs)
 
         dimOverlayManager?.show()
         floatingButtonManager?.show()
+        if (prefs.isMuteEnabled) {
+            muteButtonManager?.show()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -46,6 +51,13 @@ class OverlayService : Service() {
         } else if (intent?.action == ACTION_UPDATE_SETTINGS) {
             dimOverlayManager?.updateDimLevel(prefs.dimLevel)
             floatingButtonManager?.updateSettings()
+            
+            if (prefs.isMuteEnabled) {
+                muteButtonManager?.show()
+                muteButtonManager?.updateSettings()
+            } else {
+                muteButtonManager?.hide()
+            }
         }
 
         return START_STICKY
@@ -54,6 +66,7 @@ class OverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         floatingButtonManager?.hide()
+        muteButtonManager?.hide()
         dimOverlayManager?.hide()
     }
 

@@ -2,6 +2,7 @@ package com.example.cardimmer
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -13,44 +14,28 @@ import android.view.WindowManager
 import android.widget.ImageView
 import kotlin.math.abs
 
-class FloatingButtonManager(
+class MuteButtonManager(
     private val context: Context,
-    private val prefs: PreferencesManager,
-    private val dimOverlayManager: DimOverlayManager
+    private val prefs: PreferencesManager
 ) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var floatingView: ImageView? = null
     private var layoutParams: WindowManager.LayoutParams? = null
-    private val brightnessIndicatorManager = BrightnessIndicatorManager(context)
 
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
 
-    private var isDimMode = false
-    private var initialDimLevel = 0f
-
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private var isDragging = false
-    private var hasLongPressed = false
+    private var isClick = false
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoHideRunnable = Runnable {
         if (prefs.autoHide) {
-            floatingView?.alpha = 0.01f // Hide completely but keep it touchable
-        }
-    }
-    
-    private val longPressRunnable = Runnable {
-        if (!isDragging) {
-            hasLongPressed = true
-            isDimMode = true
-            initialDimLevel = prefs.dimLevel
-            // Visual feedback for entering dim mode
-            floatingView?.scaleX = 1.2f
-            floatingView?.scaleY = 1.2f
-            brightnessIndicatorManager.show(initialDimLevel)
+            floatingView?.alpha = 0.01f
         }
     }
 
@@ -58,9 +43,10 @@ class FloatingButtonManager(
         if (floatingView != null) return
 
         floatingView = ImageView(context).apply {
-            setImageResource(R.drawable.ic_floating_btn)
+            setImageResource(android.R.drawable.ic_lock_silent_mode_off)
             alpha = prefs.buttonOpacity
             setOnTouchListener(createTouchListener())
+            updateIcon()
         }
 
         val sizePx = getButtonSizePx()
@@ -76,8 +62,8 @@ class FloatingButtonManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = prefs.buttonX
-            y = prefs.buttonY
+            x = prefs.muteButtonX
+            y = prefs.muteButtonY
         }
 
         try {
@@ -90,9 +76,9 @@ class FloatingButtonManager(
 
     private fun getButtonSizePx(): Int {
         val dp = when (prefs.buttonSize) {
-            0 -> 36f // Small
-            1 -> 48f // Medium
-            else -> 64f // Large
+            0 -> 36f
+            1 -> 48f
+            else -> 64f
         }
         return (dp * context.resources.displayMetrics.density).toInt()
     }
@@ -107,56 +93,76 @@ class FloatingButtonManager(
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 isDragging = false
-                hasLongPressed = false
-                isDimMode = false
-
+                isClick = true
                 view.alpha = prefs.buttonOpacity
-                
-                handler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout().toLong())
                 true
             }
             MotionEvent.ACTION_MOVE -> {
                 val dx = event.rawX - initialTouchX
                 val dy = event.rawY - initialTouchY
 
-                if (!isDragging && !hasLongPressed && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                if (!isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                     isDragging = true
-                    handler.removeCallbacks(longPressRunnable)
+                    isClick = false
                 }
 
-                if (isDimMode) {
-                    // Slide up to decrease dim (clearer), slide down to increase dim (darker)
-                    // Let's say 500px is full range
-                    val deltaDim = dy / 500f
-                    var newDim = initialDimLevel + deltaDim
-                    newDim = newDim.coerceIn(0f, 0.9f)
-                    dimOverlayManager.updateDimLevel(newDim)
-                    brightnessIndicatorManager.updateLevel(newDim)
-                } else if (isDragging) {
+                if (isDragging) {
                     layoutParams?.x = initialX + dx.toInt()
                     layoutParams?.y = initialY + dy.toInt()
                     windowManager.updateViewLayout(floatingView, layoutParams)
                 }
                 true
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                handler.removeCallbacks(longPressRunnable)
-                if (isDimMode) {
-                    // Exit dim mode
-                    isDimMode = false
-                    view.scaleX = 1.0f
-                    view.scaleY = 1.0f
-                    brightnessIndicatorManager.hide()
+            MotionEvent.ACTION_UP -> {
+                if (isClick) {
+                    toggleMute()
                 } else if (isDragging) {
-                    // Save new position
-                    prefs.buttonX = layoutParams?.x ?: 0
-                    prefs.buttonY = layoutParams?.y ?: 0
+                    prefs.muteButtonX = layoutParams?.x ?: 0
+                    prefs.muteButtonY = layoutParams?.y ?: 0
                 }
-                
+                resetAutoHideTimer()
+                true
+            }
+            MotionEvent.ACTION_CANCEL -> {
                 resetAutoHideTimer()
                 true
             }
             else -> false
+        }
+    }
+
+    private fun toggleMute() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+            audioManager.adjustStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                if (isMuted) AudioManager.ADJUST_UNMUTE else AudioManager.ADJUST_MUTE,
+                AudioManager.FLAG_SHOW_UI
+            )
+        } else {
+            // Fallback for older APIs
+            val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if (currentVol == 0) {
+                // Approximate unmute (requires storing previous volume, but let's just step up)
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+            } else {
+                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+            }
+        }
+        updateIcon()
+    }
+
+    private fun updateIcon() {
+        val isMuted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+        } else {
+            audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+        }
+        
+        if (isMuted) {
+            floatingView?.setImageResource(android.R.drawable.ic_lock_silent_mode)
+        } else {
+            floatingView?.setImageResource(android.R.drawable.ic_lock_silent_mode_off)
         }
     }
 
@@ -174,13 +180,13 @@ class FloatingButtonManager(
             layoutParams?.width = sizePx
             layoutParams?.height = sizePx
             windowManager.updateViewLayout(floatingView, layoutParams)
+            updateIcon()
             resetAutoHideTimer()
         }
     }
 
     fun hide() {
         handler.removeCallbacks(autoHideRunnable)
-        handler.removeCallbacks(longPressRunnable)
         floatingView?.let {
             try {
                 windowManager.removeView(it)

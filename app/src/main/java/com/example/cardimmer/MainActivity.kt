@@ -47,6 +47,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.switchMute.setOnCheckedChangeListener { _, isChecked ->
+            prefs.isMuteEnabled = isChecked
+            notifyServiceUpdate()
+        }
+
         binding.seekDimLevel.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -100,6 +105,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadSettings() {
         binding.switchEnable.isChecked = prefs.isEnabled
+        binding.switchMute.isChecked = prefs.isMuteEnabled
         binding.seekDimLevel.progress = (prefs.dimLevel * 100).toInt()
         binding.spinnerButtonSize.setSelection(prefs.buttonSize)
         binding.seekButtonOpacity.progress = (prefs.buttonOpacity * 100).toInt()
