@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="تطبيق خفض السطوع"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:layout_marginBottom="24dp"/>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchEnable"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="تفعيل التعتيم والزر العائم"
+            android:textSize="18sp"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="مستوى التعتيم اليدوي:"
+            android:layout_marginTop="8dp"/>
+        
+        <SeekBar
+            android:id="@+id/seekDimLevel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="90"
+            android:progress="50"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="حجم الزر العائم:"
+            android:layout_marginTop="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerButtonSize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/button_sizes"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="شفافية الزر العائم:"
+            android:layout_marginTop="8dp"/>
+        
+        <SeekBar
+            android:id="@+id/seekButtonOpacity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="80"
+            android:layout_marginBottom="16dp"/>
+
+        <CheckBox
+            android:id="@+id/checkAutoHide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="إخفاء الزر العائم تلقائياً عند عدم الاستخدام"
+            android:layout_marginBottom="16dp"/>
+
+        <CheckBox
+            android:id="@+id/checkAutoStart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="التشغيل التلقائي عند بدء تشغيل الجهاز"
+            android:layout_marginBottom="24dp"/>
+
+        <Button
+            android:id="@+id/btnReset"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="استعادة الإعدادات الافتراضية"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+    </LinearLayout>
+</ScrollView>

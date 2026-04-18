@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Car Dimmer</string>
+    <string name="dimmer_active">تعتيم الشاشة نشط</string>
+    <string name="stop_dimming">إيقاف التعتيم</string>
+    <string name="permission_required">الأذونات مطلوبة لعمل التطبيق</string>
+    <string name="draw_over_apps_reason">نحتاج لإذن الظهور فوق التطبيقات لرسم طبقة التعتيم والزر العائم.</string>
+</resources>
