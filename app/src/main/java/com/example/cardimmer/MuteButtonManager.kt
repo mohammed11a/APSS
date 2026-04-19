@@ -26,6 +26,8 @@ class MuteButtonManager(
 
     private var initialX = 0
     private var initialY = 0
+    private var initialTouchX = 0f
+    private var initialTouchY = 0f
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop * 3
     private var isDragging = false
 
