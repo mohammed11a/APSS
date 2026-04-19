@@ -8,9 +8,13 @@ import android.provider.Settings
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+        val action = intent.action
+        if (action == Intent.ACTION_BOOT_COMPLETED || 
+            action == "android.intent.action.LOCKED_BOOT_COMPLETED" || 
+            action == "android.intent.action.QUICKBOOT_POWERON") {
+            
             val prefs = PreferencesManager(context)
-            if (prefs.autoStart && prefs.isEnabled && Settings.canDrawOverlays(context)) {
+            if (prefs.autoStart && (prefs.isEnabled || prefs.isMuteEnabled) && Settings.canDrawOverlays(context)) {
                 val serviceIntent = Intent(context, OverlayService::class.java)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(serviceIntent)
