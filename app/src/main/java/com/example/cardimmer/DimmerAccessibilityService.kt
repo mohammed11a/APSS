@@ -37,6 +37,21 @@ class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnS
         dimOverlayManager = DimOverlayManager(this, prefs)
         
         checkScheduleAndUpdateOverlay()
+        
+        // Advanced Watchdog: Ensure OverlayService (floating buttons) is running
+        // Since AccessibilityService is guaranteed to start by Android, we use it to wake up the rest of the app!
+        if (prefs.autoStart && (prefs.isEnabled || prefs.isMuteEnabled)) {
+            try {
+                val serviceIntent = Intent(this, OverlayService::class.java)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
