@@ -2,10 +2,19 @@ package com.example.cardimmer
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
 
 class PreferencesManager(context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val safeContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        val deviceContext = context.createDeviceProtectedStorageContext()
+        deviceContext.moveSharedPreferencesFrom(context, PREFS_NAME)
+        deviceContext
+    } else {
+        context
+    }
+
+    private val prefs: SharedPreferences = safeContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     companion object {
         private const val PREFS_NAME = "CarDimmerPrefs"

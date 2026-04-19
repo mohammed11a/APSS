@@ -140,6 +140,32 @@ class MainActivity : AppCompatActivity() {
                 stopOverlayService()
             }
         }
+
+        // Add a button dynamically or handle a secret tap on the title to open AutoStart
+        // Since we don't have the button in XML right now, let's attach it to the root title
+        // or we can just try launching it directly when checking battery optimization
+    }
+
+    private fun requestAutoStartPermission() {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        try {
+            val intent = Intent()
+            when (manufacturer) {
+                "xiaomi" -> intent.component = ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
+                "oppo" -> intent.component = ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity")
+                "vivo" -> intent.component = ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity")
+                "letv" -> intent.component = ComponentName("com.letv.android.letvsafe", "com.letv.android.letvsafe.AutobootManageActivity")
+                "honor" -> intent.component = ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity")
+                else -> {
+                    // For generic Android car head units, sometimes standard battery settings is enough
+                    return
+                }
+            }
+            startActivity(intent)
+            Toast.makeText(this, "يرجى السماح للتطبيق بالتشغيل التلقائي من هذه القائمة", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun loadSettings() {
@@ -227,6 +253,9 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
+                
+                // Also trigger custom auto-start screen if available
+                requestAutoStartPermission()
             }
         }
     }

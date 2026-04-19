@@ -16,8 +16,13 @@ class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnS
 
     private val timeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_TIME_TICK) {
+            val action = intent?.action
+            if (action == Intent.ACTION_TIME_TICK) {
                 checkScheduleAndUpdateOverlay()
+                ensureOverlayServiceRunning()
+            } else if (action == Intent.ACTION_SCREEN_ON) {
+                // Instantly wake up the floating buttons when car screen turns on
+                ensureOverlayServiceRunning()
             }
         }
     }
@@ -30,16 +35,22 @@ class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnS
         val sharedPreferences = getSharedPreferences("CarDimmerPrefs", MODE_PRIVATE)
         sharedPreferences.registerOnSharedPreferenceChangeListener(this)
 
-        // Register time tick receiver
-        val filter = IntentFilter(Intent.ACTION_TIME_TICK)
+        // Register time tick and screen on receiver
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
         registerReceiver(timeReceiver, filter)
 
         dimOverlayManager = DimOverlayManager(this, prefs)
         
         checkScheduleAndUpdateOverlay()
-        
+        ensureOverlayServiceRunning()
+    }
+
+    private fun ensureOverlayServiceRunning() {
         // Advanced Watchdog: Ensure OverlayService (floating buttons) is running
-        // Since AccessibilityService is guaranteed to start by Android, we use it to wake up the rest of the app!
+        // Since AccessibilityService is guaranteed to start/stay alive by Android, we use it to wake up the rest of the app!
         if (prefs.autoStart && (prefs.isEnabled || prefs.isMuteEnabled)) {
             try {
                 val serviceIntent = Intent(this, OverlayService::class.java)
