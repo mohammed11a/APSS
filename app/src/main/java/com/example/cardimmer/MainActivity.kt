@@ -1,10 +1,12 @@
 package com.example.cardimmer
 
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.TextUtils
 import android.view.View
 import android.widget.AdapterView
 import android.widget.SeekBar
@@ -119,6 +121,21 @@ class MainActivity : AppCompatActivity() {
         notifyServiceUpdate()
     }
 
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val expectedComponentName = ComponentName(this, DimmerAccessibilityService::class.java)
+        val enabledServicesSetting = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val colonSplitter = TextUtils.SimpleStringSplitter(':')
+        colonSplitter.setString(enabledServicesSetting)
+        while (colonSplitter.hasNext()) {
+            val componentNameString = colonSplitter.next()
+            val enabledService = ComponentName.unflattenFromString(componentNameString)
+            if (enabledService != null && enabledService == expectedComponentName) {
+                return true
+            }
+        }
+        return false
+    }
+
     private fun checkPermissionsAndStartService() {
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
@@ -127,6 +144,16 @@ class MainActivity : AppCompatActivity() {
             )
             Toast.makeText(this, R.string.draw_over_apps_reason, Toast.LENGTH_LONG).show()
             overlayPermissionLauncher.launch(intent)
+            return
+        }
+
+        if (prefs.isEnabled && !isAccessibilityServiceEnabled()) {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            Toast.makeText(this, R.string.accessibility_required, Toast.LENGTH_LONG).show()
+            startActivity(intent)
+            // Revert switch visually because service isn't active yet
+            binding.switchEnable.isChecked = false
+            prefs.isEnabled = false
             return
         }
 

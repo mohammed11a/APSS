@@ -25,10 +25,12 @@ class DimOverlayManager(private val context: Context, private val prefs: Prefere
         layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            if (context is android.accessibilityservice.AccessibilityService)
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
-                WindowManager.LayoutParams.TYPE_SYSTEM_ERROR, // Fallback for older, though app is target 24+, mostly 26+ is TYPE_APPLICATION_OVERLAY
+                WindowManager.LayoutParams.TYPE_SYSTEM_ERROR,
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or

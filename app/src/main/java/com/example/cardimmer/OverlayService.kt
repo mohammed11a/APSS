@@ -14,7 +14,6 @@ import androidx.core.app.NotificationCompat
 class OverlayService : Service() {
 
     private lateinit var prefs: PreferencesManager
-    private var dimOverlayManager: DimOverlayManager? = null
     private var floatingButtonManager: FloatingButtonManager? = null
     private var muteButtonManager: MuteButtonManager? = null
 
@@ -32,12 +31,10 @@ class OverlayService : Service() {
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
 
-        dimOverlayManager = DimOverlayManager(this, prefs)
-        floatingButtonManager = FloatingButtonManager(this, prefs, dimOverlayManager!!)
+        floatingButtonManager = FloatingButtonManager(this, prefs)
         muteButtonManager = MuteButtonManager(this, prefs)
 
         if (prefs.isEnabled) {
-            dimOverlayManager?.show()
             floatingButtonManager?.show()
         }
         
@@ -54,12 +51,9 @@ class OverlayService : Service() {
             return START_NOT_STICKY
         } else if (intent?.action == ACTION_UPDATE_SETTINGS) {
             if (prefs.isEnabled) {
-                dimOverlayManager?.show()
                 floatingButtonManager?.show()
-                dimOverlayManager?.updateDimLevel(prefs.dimLevel)
                 floatingButtonManager?.updateSettings()
             } else {
-                dimOverlayManager?.hide()
                 floatingButtonManager?.hide()
             }
             
@@ -78,7 +72,6 @@ class OverlayService : Service() {
         super.onDestroy()
         floatingButtonManager?.hide()
         muteButtonManager?.hide()
-        dimOverlayManager?.hide()
     }
 
     override fun onBind(intent: Intent?): IBinder? {

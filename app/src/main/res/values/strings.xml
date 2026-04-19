@@ -4,4 +4,6 @@
     <string name="stop_dimming">إيقاف التعتيم</string>
     <string name="permission_required">الأذونات مطلوبة لعمل التطبيق</string>
     <string name="draw_over_apps_reason">نحتاج لإذن الظهور فوق التطبيقات لرسم طبقة التعتيم والزر العائم.</string>
+    <string name="accessibility_description">نحتاج إذن إمكانية الوصول لإنشاء طبقة تعتيم الشاشة الآمنة التي لا تعيق اللمس على شاشات السيارات.</string>
+    <string name="accessibility_required">يرجى تفعيل خدمة Car Dimmer من إعدادات إمكانية الوصول لتشغيل التعتيم.</string>
 </resources>

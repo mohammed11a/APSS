@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -25,13 +26,16 @@ class MuteButtonManager(
 
     private var initialX = 0
     private var initialY = 0
-    private var initialTouchX = 0f
-    private var initialTouchY = 0f
-
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop * 3 // Increased threshold for car screens
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop * 3
     private var isDragging = false
-    private var isClick = false
-    private var touchDownTime = 0L
+
+    private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            toggleMute()
+            resetAutoHideTimer()
+            return true
+        }
+    })
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoHideRunnable = Runnable {
@@ -44,6 +48,8 @@ class MuteButtonManager(
         if (floatingView != null) return
 
         floatingView = ImageView(context).apply {
+            setBackgroundResource(R.drawable.bg_circle_button)
+            setPadding(16, 16, 16, 16)
             setImageResource(android.R.drawable.ic_lock_silent_mode_off)
             alpha = prefs.buttonOpacity
             setOnTouchListener(createTouchListener())
@@ -86,6 +92,11 @@ class MuteButtonManager(
 
     private fun createTouchListener() = View.OnTouchListener { view, event ->
         resetAutoHideTimer()
+        
+        // Let GestureDetector handle clicks
+        if (gestureDetector.onTouchEvent(event)) {
+            return@OnTouchListener true
+        }
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -93,9 +104,7 @@ class MuteButtonManager(
                 initialY = layoutParams?.y ?: 0
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
-                touchDownTime = System.currentTimeMillis()
                 isDragging = false
-                isClick = true
                 view.alpha = prefs.buttonOpacity
                 true
             }
@@ -105,7 +114,6 @@ class MuteButtonManager(
 
                 if (!isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                     isDragging = true
-                    isClick = false
                 }
 
                 if (isDragging) {
@@ -116,10 +124,7 @@ class MuteButtonManager(
                 true
             }
             MotionEvent.ACTION_UP -> {
-                val touchDuration = System.currentTimeMillis() - touchDownTime
-                if (isClick || (touchDuration < 300 && !isDragging)) {
-                    toggleMute()
-                } else if (isDragging) {
+                if (isDragging) {
                     prefs.muteButtonX = layoutParams?.x ?: 0
                     prefs.muteButtonY = layoutParams?.y ?: 0
                 }

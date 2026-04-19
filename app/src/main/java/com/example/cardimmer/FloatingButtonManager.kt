@@ -5,6 +5,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -15,8 +16,7 @@ import kotlin.math.abs
 
 class FloatingButtonManager(
     private val context: Context,
-    private val prefs: PreferencesManager,
-    private val dimOverlayManager: DimOverlayManager
+    private val prefs: PreferencesManager
 ) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var floatingView: ImageView? = null
@@ -35,22 +35,24 @@ class FloatingButtonManager(
     private var isDragging = false
     private var hasLongPressed = false
 
+    private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onLongPress(e: MotionEvent) {
+            if (!isDragging) {
+                hasLongPressed = true
+                isDimMode = true
+                initialDimLevel = prefs.dimLevel
+                // Visual feedback for entering dim mode
+                floatingView?.scaleX = 1.2f
+                floatingView?.scaleY = 1.2f
+                brightnessIndicatorManager.show(initialDimLevel)
+            }
+        }
+    })
+
     private val handler = Handler(Looper.getMainLooper())
     private val autoHideRunnable = Runnable {
         if (prefs.autoHide) {
             floatingView?.alpha = 0.01f // Hide completely but keep it touchable
-        }
-    }
-    
-    private val longPressRunnable = Runnable {
-        if (!isDragging) {
-            hasLongPressed = true
-            isDimMode = true
-            initialDimLevel = prefs.dimLevel
-            // Visual feedback for entering dim mode
-            floatingView?.scaleX = 1.2f
-            floatingView?.scaleY = 1.2f
-            brightnessIndicatorManager.show(initialDimLevel)
         }
     }
 
@@ -100,6 +102,8 @@ class FloatingButtonManager(
     private fun createTouchListener() = View.OnTouchListener { view, event ->
         resetAutoHideTimer()
 
+        gestureDetector.onTouchEvent(event)
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 initialX = layoutParams?.x ?: 0
@@ -111,8 +115,6 @@ class FloatingButtonManager(
                 isDimMode = false
 
                 view.alpha = prefs.buttonOpacity
-                
-                handler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout().toLong())
                 true
             }
             MotionEvent.ACTION_MOVE -> {
@@ -121,7 +123,6 @@ class FloatingButtonManager(
 
                 if (!isDragging && !hasLongPressed && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                     isDragging = true
-                    handler.removeCallbacks(longPressRunnable)
                 }
 
                 if (isDimMode) {
@@ -130,7 +131,7 @@ class FloatingButtonManager(
                     val deltaDim = dy / 500f
                     var newDim = initialDimLevel + deltaDim
                     newDim = newDim.coerceIn(0f, 0.9f)
-                    dimOverlayManager.updateDimLevel(newDim)
+                    prefs.dimLevel = newDim
                     brightnessIndicatorManager.updateLevel(newDim)
                 } else if (isDragging) {
                     layoutParams?.x = initialX + dx.toInt()
@@ -140,7 +141,6 @@ class FloatingButtonManager(
                 true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                handler.removeCallbacks(longPressRunnable)
                 if (isDimMode) {
                     // Exit dim mode
                     isDimMode = false
@@ -180,7 +180,6 @@ class FloatingButtonManager(
 
     fun hide() {
         handler.removeCallbacks(autoHideRunnable)
-        handler.removeCallbacks(longPressRunnable)
         floatingView?.let {
             try {
                 windowManager.removeView(it)
