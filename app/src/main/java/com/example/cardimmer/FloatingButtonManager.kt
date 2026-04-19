@@ -121,7 +121,7 @@ class FloatingButtonManager(
                 val dx = event.rawX - initialTouchX
                 val dy = event.rawY - initialTouchY
 
-                if (!isDragging && !hasLongPressed && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                if (!prefs.isLocked && !isDragging && !hasLongPressed && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                     isDragging = true
                 }
 

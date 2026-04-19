@@ -9,6 +9,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.view.View
 import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +42,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
+        val hours = (0..23).map { String.format("%02d:00", it) }
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, hours)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        
+        val spinnerStart = findViewById<android.widget.Spinner>(R.id.spinnerStartHour)
+        val spinnerEnd = findViewById<android.widget.Spinner>(R.id.spinnerEndHour)
+        
+        spinnerStart.adapter = adapter
+        spinnerEnd.adapter = adapter
+
+        val layoutSchedule = findViewById<View>(R.id.layoutSchedule)
+        val switchSchedule = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSchedule)
+        
+        switchSchedule.setOnCheckedChangeListener { _, isChecked ->
+            prefs.isScheduleEnabled = isChecked
+            layoutSchedule.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+        
+        spinnerStart.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                prefs.scheduleStartHour = position
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        
+        spinnerEnd.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                prefs.scheduleEndHour = position
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        val switchLock = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchLock)
+        switchLock.setOnCheckedChangeListener { _, isChecked ->
+            prefs.isLocked = isChecked
+        }
+
         binding.switchEnable.setOnCheckedChangeListener { _, isChecked ->
             prefs.isEnabled = isChecked
             onSwitchChanged()
@@ -110,6 +148,19 @@ class MainActivity : AppCompatActivity() {
         binding.seekButtonOpacity.progress = (prefs.buttonOpacity * 100).toInt()
         binding.checkAutoHide.isChecked = prefs.autoHide
         binding.checkAutoStart.isChecked = prefs.autoStart
+
+        val switchSchedule = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSchedule)
+        val switchLock = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchLock)
+        val spinnerStart = findViewById<android.widget.Spinner>(R.id.spinnerStartHour)
+        val spinnerEnd = findViewById<android.widget.Spinner>(R.id.spinnerEndHour)
+        val layoutSchedule = findViewById<View>(R.id.layoutSchedule)
+
+        switchSchedule.isChecked = prefs.isScheduleEnabled
+        layoutSchedule.visibility = if (prefs.isScheduleEnabled) View.VISIBLE else View.GONE
+        switchLock.isChecked = prefs.isLocked
+        
+        spinnerStart.setSelection(prefs.scheduleStartHour)
+        spinnerEnd.setSelection(prefs.scheduleEndHour)
     }
 
     private fun onSwitchChanged() {

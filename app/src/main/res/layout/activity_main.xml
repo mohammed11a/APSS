@@ -34,6 +34,63 @@
             android:textSize="18sp"
             android:layout_marginBottom="16dp"/>
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchLock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="قفل أماكن الأزرار العائمة"
+            android:textSize="18sp"
+            android:layout_marginBottom="16dp"/>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="تعطيل التعتيم في النهار (تحديد وقت)"
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/layoutSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="من الساعة:" />
+                <Spinner
+                    android:id="@+id/spinnerStartHour"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="إلى الساعة:" />
+                <Spinner
+                    android:id="@+id/spinnerEndHour"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

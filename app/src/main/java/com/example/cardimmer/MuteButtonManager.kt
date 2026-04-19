@@ -6,8 +6,8 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.view.GestureDetector
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -31,14 +31,6 @@ class MuteButtonManager(
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop * 3
     private var isDragging = false
 
-    private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-        override fun onSingleTapUp(e: MotionEvent): Boolean {
-            toggleMute()
-            resetAutoHideTimer()
-            return true
-        }
-    })
-
     private val handler = Handler(Looper.getMainLooper())
     private val autoHideRunnable = Runnable {
         if (prefs.autoHide) {
@@ -54,6 +46,10 @@ class MuteButtonManager(
             setPadding(16, 16, 16, 16)
             setImageResource(android.R.drawable.ic_lock_silent_mode_off)
             alpha = prefs.buttonOpacity
+            setOnClickListener {
+                toggleMute()
+                resetAutoHideTimer()
+            }
             setOnTouchListener(createTouchListener())
             updateIcon()
         }
@@ -94,11 +90,6 @@ class MuteButtonManager(
 
     private fun createTouchListener() = View.OnTouchListener { view, event ->
         resetAutoHideTimer()
-        
-        // Let GestureDetector handle clicks
-        if (gestureDetector.onTouchEvent(event)) {
-            return@OnTouchListener true
-        }
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -114,7 +105,7 @@ class MuteButtonManager(
                 val dx = event.rawX - initialTouchX
                 val dy = event.rawY - initialTouchY
 
-                if (!isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                if (!prefs.isLocked && !isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                     isDragging = true
                 }
 
@@ -129,6 +120,8 @@ class MuteButtonManager(
                 if (isDragging) {
                     prefs.muteButtonX = layoutParams?.x ?: 0
                     prefs.muteButtonY = layoutParams?.y ?: 0
+                } else {
+                    view.performClick()
                 }
                 resetAutoHideTimer()
                 true
@@ -142,23 +135,20 @@ class MuteButtonManager(
     }
 
     private fun toggleMute() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val isMuted = audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+        try {
             audioManager.adjustStreamVolume(
                 AudioManager.STREAM_MUSIC,
-                if (isMuted) AudioManager.ADJUST_UNMUTE else AudioManager.ADJUST_MUTE,
+                AudioManager.ADJUST_TOGGLE_MUTE,
                 AudioManager.FLAG_SHOW_UI
             )
-        } else {
-            // Fallback for older APIs
-            val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-            if (currentVol == 0) {
-                // Approximate unmute (requires storing previous volume, but let's just step up)
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-            } else {
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
-            }
+            
+            // Fallback for some car head units
+            audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_MUTE))
+            audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_VOLUME_MUTE))
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
+        
         updateIcon()
     }
 

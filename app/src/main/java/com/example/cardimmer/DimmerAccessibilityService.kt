@@ -1,13 +1,26 @@
 package com.example.cardimmer
 
 import android.accessibilityservice.AccessibilityService
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.view.accessibility.AccessibilityEvent
+import java.util.Calendar
 
 class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var prefs: PreferencesManager
     private var dimOverlayManager: DimOverlayManager? = null
+
+    private val timeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_TIME_TICK) {
+                checkScheduleAndUpdateOverlay()
+            }
+        }
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -17,11 +30,13 @@ class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnS
         val sharedPreferences = getSharedPreferences("CarDimmerPrefs", MODE_PRIVATE)
         sharedPreferences.registerOnSharedPreferenceChangeListener(this)
 
+        // Register time tick receiver
+        val filter = IntentFilter(Intent.ACTION_TIME_TICK)
+        registerReceiver(timeReceiver, filter)
+
         dimOverlayManager = DimOverlayManager(this, prefs)
         
-        if (prefs.isEnabled) {
-            dimOverlayManager?.show()
-        }
+        checkScheduleAndUpdateOverlay()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -34,12 +49,8 @@ class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnS
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
-            "is_enabled" -> {
-                if (prefs.isEnabled) {
-                    dimOverlayManager?.show()
-                } else {
-                    dimOverlayManager?.hide()
-                }
+            "is_enabled", "is_schedule_enabled", "schedule_start_hour", "schedule_end_hour" -> {
+                checkScheduleAndUpdateOverlay()
             }
             "dim_level" -> {
                 if (prefs.isEnabled) {
@@ -49,10 +60,42 @@ class DimmerAccessibilityService : AccessibilityService(), SharedPreferences.OnS
         }
     }
 
+    private fun checkScheduleAndUpdateOverlay() {
+        if (!prefs.isEnabled) {
+            dimOverlayManager?.hide()
+            return
+        }
+
+        if (prefs.isScheduleEnabled) {
+            val calendar = Calendar.getInstance()
+            val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+
+            val start = prefs.scheduleStartHour
+            val end = prefs.scheduleEndHour
+
+            val isDaytime = if (start < end) {
+                currentHour in start until end
+            } else {
+                currentHour >= start || currentHour < end
+            }
+
+            if (isDaytime) {
+                dimOverlayManager?.hide()
+            } else {
+                dimOverlayManager?.show()
+                dimOverlayManager?.updateDimLevel(prefs.dimLevel)
+            }
+        } else {
+            dimOverlayManager?.show()
+            dimOverlayManager?.updateDimLevel(prefs.dimLevel)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         val sharedPreferences = getSharedPreferences("CarDimmerPrefs", MODE_PRIVATE)
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+        unregisterReceiver(timeReceiver)
         dimOverlayManager?.hide()
     }
 }

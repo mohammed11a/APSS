@@ -20,6 +20,10 @@ class PreferencesManager(context: Context) {
         private const val KEY_MUTE_ENABLED = "mute_enabled"
         private const val KEY_MUTE_BUTTON_X = "mute_button_x"
         private const val KEY_MUTE_BUTTON_Y = "mute_button_y"
+        private const val KEY_IS_SCHEDULE_ENABLED = "is_schedule_enabled"
+        private const val KEY_SCHEDULE_START_HOUR = "schedule_start_hour"
+        private const val KEY_SCHEDULE_END_HOUR = "schedule_end_hour"
+        private const val KEY_IS_LOCKED = "is_locked"
     }
 
     var isEnabled: Boolean
@@ -68,6 +72,22 @@ class PreferencesManager(context: Context) {
     var muteButtonY: Int
         get() = prefs.getInt(KEY_MUTE_BUTTON_Y, 300)
         set(value) = prefs.edit().putInt(KEY_MUTE_BUTTON_Y, value).apply()
+
+    var isScheduleEnabled: Boolean
+        get() = prefs.getBoolean(KEY_IS_SCHEDULE_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_IS_SCHEDULE_ENABLED, value).apply()
+
+    var scheduleStartHour: Int
+        get() = prefs.getInt(KEY_SCHEDULE_START_HOUR, 6)
+        set(value) = prefs.edit().putInt(KEY_SCHEDULE_START_HOUR, value).apply()
+
+    var scheduleEndHour: Int
+        get() = prefs.getInt(KEY_SCHEDULE_END_HOUR, 18)
+        set(value) = prefs.edit().putInt(KEY_SCHEDULE_END_HOUR, value).apply()
+
+    var isLocked: Boolean
+        get() = prefs.getBoolean(KEY_IS_LOCKED, false)
+        set(value) = prefs.edit().putBoolean(KEY_IS_LOCKED, value).apply()
 
     fun resetToDefaults() {
         prefs.edit().clear().apply()
