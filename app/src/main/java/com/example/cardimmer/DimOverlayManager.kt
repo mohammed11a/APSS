@@ -11,15 +11,18 @@ class DimOverlayManager(private val context: Context, private val prefs: Prefere
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var dimView: View? = null
+    private var layoutParams: WindowManager.LayoutParams? = null
 
     fun show() {
         if (dimView != null) return
 
         dimView = View(context).apply {
-            setBackgroundColor(Color.argb((prefs.dimLevel * 255).toInt(), 0, 0, 0))
+            setBackgroundColor(Color.BLACK)
         }
 
-        val params = WindowManager.LayoutParams(
+        val safeLevel = prefs.dimLevel.coerceIn(0f, 0.8f)
+
+        layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -32,18 +35,27 @@ class DimOverlayManager(private val context: Context, private val prefs: Prefere
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
-        )
+        ).apply {
+            alpha = safeLevel
+        }
 
         try {
-            windowManager.addView(dimView, params)
+            windowManager.addView(dimView, layoutParams)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     fun updateDimLevel(level: Float) {
-        val safeLevel = level.coerceIn(0f, 0.9f)
-        dimView?.setBackgroundColor(Color.argb((safeLevel * 255).toInt(), 0, 0, 0))
+        val safeLevel = level.coerceIn(0f, 0.8f)
+        layoutParams?.alpha = safeLevel
+        if (dimView != null && layoutParams != null) {
+            try {
+                windowManager.updateViewLayout(dimView, layoutParams)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
         prefs.dimLevel = safeLevel
     }
 

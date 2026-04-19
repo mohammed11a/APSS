@@ -36,8 +36,11 @@ class OverlayService : Service() {
         floatingButtonManager = FloatingButtonManager(this, prefs, dimOverlayManager!!)
         muteButtonManager = MuteButtonManager(this, prefs)
 
-        dimOverlayManager?.show()
-        floatingButtonManager?.show()
+        if (prefs.isEnabled) {
+            dimOverlayManager?.show()
+            floatingButtonManager?.show()
+        }
+        
         if (prefs.isMuteEnabled) {
             muteButtonManager?.show()
         }
@@ -46,11 +49,19 @@ class OverlayService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             prefs.isEnabled = false
+            prefs.isMuteEnabled = false
             stopSelf()
             return START_NOT_STICKY
         } else if (intent?.action == ACTION_UPDATE_SETTINGS) {
-            dimOverlayManager?.updateDimLevel(prefs.dimLevel)
-            floatingButtonManager?.updateSettings()
+            if (prefs.isEnabled) {
+                dimOverlayManager?.show()
+                floatingButtonManager?.show()
+                dimOverlayManager?.updateDimLevel(prefs.dimLevel)
+                floatingButtonManager?.updateSettings()
+            } else {
+                dimOverlayManager?.hide()
+                floatingButtonManager?.hide()
+            }
             
             if (prefs.isMuteEnabled) {
                 muteButtonManager?.show()

@@ -31,7 +31,7 @@ class FloatingButtonManager(
     private var isDimMode = false
     private var initialDimLevel = 0f
 
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop * 3 // Increased threshold for car screens
     private var isDragging = false
     private var hasLongPressed = false
 

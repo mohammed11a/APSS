@@ -28,9 +28,10 @@ class MuteButtonManager(
     private var initialTouchX = 0f
     private var initialTouchY = 0f
 
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop * 3 // Increased threshold for car screens
     private var isDragging = false
     private var isClick = false
+    private var touchDownTime = 0L
 
     private val handler = Handler(Looper.getMainLooper())
     private val autoHideRunnable = Runnable {
@@ -92,6 +93,7 @@ class MuteButtonManager(
                 initialY = layoutParams?.y ?: 0
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
+                touchDownTime = System.currentTimeMillis()
                 isDragging = false
                 isClick = true
                 view.alpha = prefs.buttonOpacity
@@ -114,7 +116,8 @@ class MuteButtonManager(
                 true
             }
             MotionEvent.ACTION_UP -> {
-                if (isClick) {
+                val touchDuration = System.currentTimeMillis() - touchDownTime
+                if (isClick || (touchDuration < 300 && !isDragging)) {
                     toggleMute()
                 } else if (isDragging) {
                     prefs.muteButtonX = layoutParams?.x ?: 0

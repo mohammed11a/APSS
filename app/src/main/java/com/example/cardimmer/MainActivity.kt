@@ -40,16 +40,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.switchEnable.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                checkPermissionsAndStartService()
-            } else {
-                stopOverlayService()
-            }
+            prefs.isEnabled = isChecked
+            onSwitchChanged()
         }
 
         binding.switchMute.setOnCheckedChangeListener { _, isChecked ->
             prefs.isMuteEnabled = isChecked
-            notifyServiceUpdate()
+            onSwitchChanged()
         }
 
         binding.seekDimLevel.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -113,6 +110,15 @@ class MainActivity : AppCompatActivity() {
         binding.checkAutoStart.isChecked = prefs.autoStart
     }
 
+    private fun onSwitchChanged() {
+        if (prefs.isEnabled || prefs.isMuteEnabled) {
+            checkPermissionsAndStartService()
+        } else {
+            stopOverlayService()
+        }
+        notifyServiceUpdate()
+    }
+
     private fun checkPermissionsAndStartService() {
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
@@ -128,7 +134,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startOverlayService() {
-        prefs.isEnabled = true
         val intent = Intent(this, OverlayService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
@@ -138,13 +143,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopOverlayService() {
-        prefs.isEnabled = false
         val intent = Intent(this, OverlayService::class.java)
         stopService(intent)
     }
 
     private fun notifyServiceUpdate() {
-        if (prefs.isEnabled && Settings.canDrawOverlays(this)) {
+        if ((prefs.isEnabled || prefs.isMuteEnabled) && Settings.canDrawOverlays(this)) {
             val intent = Intent(this, OverlayService::class.java).apply {
                 action = OverlayService.ACTION_UPDATE_SETTINGS
             }
